@@ -14,11 +14,11 @@ DROP VIEW IF EXISTS poligonos.v_poligono_sensor;
 
 -- Crear vista v_poligono_sensor
 CREATE OR REPLACE VIEW poligonos.v_poligono_sensor AS(
--- Calcula poligonos que intersectan con data de squeesar
 	SELECT
 		table_union.poligono_id id_poligono,
 		table_union.sensores_id id_sensor
 	FROM (
+		-- Calcula poligonos que intersectan con data de prisma
 		SELECT
 			t1.id_poligono poligono_id,
 			1 sensores_id
@@ -29,7 +29,7 @@ CREATE OR REPLACE VIEW poligonos.v_poligono_sensor AS(
 
 		UNION
 
-		-- Calcula poligonos que intersecta con data de prismas
+		-- Calcula poligonos que intersecta con data de squeesar
 		SELECT
 			t2.id_poligono poligono_id,
 			3 sensores_id
