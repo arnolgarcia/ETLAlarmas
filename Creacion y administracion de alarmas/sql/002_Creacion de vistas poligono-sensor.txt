@@ -13,49 +13,39 @@ DROP VIEW IF EXISTS poligonos.v_poligono_sensor_detalle;
 DROP VIEW IF EXISTS poligonos.v_poligono_sensor;
 
 -- Crear vista v_poligono_sensor
--- Despues hay que cambiar esta vista a tabla
-CREATE VIEW poligonos.v_poligono_sensor AS(
-	-- Calcula poligonos que intersectan con data de squeesar
+CREATE OR REPLACE VIEW poligonos.v_poligono_sensor AS(
+-- Calcula poligonos que intersectan con data de squeesar
 	SELECT
-		table2.id poligono_id,
-		3 sensores_id
-	FROM
-		"squeesar"."historico_squeesar_6" table1
-	INNER JOIN 
-		"poligonos"."poligono" table2
-	ON
-		ST_Intersects (table1.geom, table2.geom	)
-	WHERE
-		ST_isvalid (table1.geom) = 't' AND 
-		ST_isvalid (table2.geom) = 't'
-	GROUP BY
-		table2.id
+		table_union.poligono_id id_poligono,
+		table_union.sensores_id id_sensor
+	FROM (
+		SELECT
+			t1.id_poligono poligono_id,
+			1 sensores_id
+		FROM
+			poligonos.poligono_prisma t1
+		GROUP BY
+			t1.id_poligono
 
-	UNION
+		UNION
 
-	-- Calcula poligonos que intersecta con data de prismas
-	SELECT
-		table2.id poligono_id,
-		1 sensores_id
-	FROM
-		"prismas"."cons_alarma_prisma" table1
-	INNER JOIN 
-		"poligonos"."poligono" table2
-	ON 
-		ST_Intersects (table1.geom, table2.geom	)
-	WHERE
-		ST_isvalid (table1.geom) = 't' AND 
-		ST_isvalid (table2.geom) = 't'
-	GROUP BY
-		table2.id
+		-- Calcula poligonos que intersecta con data de prismas
+		SELECT
+			t2.id_poligono poligono_id,
+			3 sensores_id
+		FROM
+			poligonos.poligono_squeesar t2
+		GROUP BY
+			t2.id_poligono
+	) table_union
+	ORDER BY
+		table_union.poligono_id
 )
 ;
 
--- Crear vista v_poligono_sensor_detalle
 CREATE VIEW poligonos.v_poligono_sensor_detalle AS (
 	SELECT
-		t1.poligono_id,
-		t1.sensores_id,
+		t1.*,
 		t2.nombre_sensor,
 		t2.descripcion
 	FROM

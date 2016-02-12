@@ -69,23 +69,24 @@ ADD CONSTRAINT "alarmas_algoritmos_id_fkey" FOREIGN KEY ("algoritmos_id") REFERE
 
 
 
--- Crear vista con la clausula compuesta a partir de la tabla alarmas.alarma
+-- Crear vista con las clausulas compuestas a partir de los parametros de la tabla alarmas.alarma
 CREATE OR REPLACE VIEW alarmas.v_clausula_alarmas AS(
 	SELECT
-		t1.id,
+		t1.id alarma_id,
+		t1.poligono_id,
 		crea_query_where_alarma(t1.sensores_id, 
-								t1.camposalarma_id, 
-								t1.algoritmos_id, 
-								t1.parametro_1, 
-								t1.parametro_2, 
-								t1.regla, 
-								t1.input_regla_1, 
-								t1.input_regla_2 ) as clausula
+														t1.camposalarma_id, 
+														t1.algoritmos_id, 
+														t1.parametro_1, 
+														t1.parametro_2, 
+														t1.regla, 
+														t1.input_regla_1, 
+														t1.input_regla_2 ) as clausula_where
 	FROM
 		alarmas.alarma t1
 	WHERE
 		t1.estado = 't'
 	ORDER BY
-		t1.poligono_id
+		t1.id
 )
 ;
