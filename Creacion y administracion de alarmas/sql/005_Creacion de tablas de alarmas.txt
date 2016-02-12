@@ -85,5 +85,7 @@ CREATE OR REPLACE VIEW alarmas.v_clausula_alarmas AS(
 		alarmas.alarma t1
 	WHERE
 		t1.estado = 't'
+	ORDER BY
+		t1.poligono_id
 )
 ;
