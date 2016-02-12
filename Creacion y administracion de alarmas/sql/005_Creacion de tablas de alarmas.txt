@@ -1,0 +1,89 @@
+/*
+Descripcion: 	Creacion de tablas/vistas para administrar alarmas
+Fecha: 			12/02/2016
+Autor: 			Arnol García
+Tipo de sql: 	Creacion
+Objetos:		- alarmas.alarma
+				- alarmas.algoritmos
+				- alarmas.v_clausula_alarmas
+
+*/
+
+--Eliminar tabla si existen
+DROP VIEW IF EXISTS alarmas.v_clausula_alarmas;
+DROP TABLE IF EXISTS alarmas.alarma;
+DROP TABLE IF EXISTS alarmas.algoritmos;
+
+
+
+-- Crear tabla algoritmos
+CREATE TABLE "alarmas"."algoritmos" (
+	"id" serial PRIMARY KEY,
+	"nombre_algoritmo" VARCHAR(100),
+	"descripcion" VARCHAR (300),
+	"nro_parametros" int4,
+	"enabled" BOOLEAN
+) WITH (OIDS = FALSE);
+
+-- Asignar tabla a usuario postgres
+ALTER TABLE "alarmas"."algoritmos" OWNER TO "postgres";
+
+-- Insertar algunos valores
+INSERT INTO alarmas.algoritmos (nombre_algoritmo,descripcion,nro_parametros,enabled) VALUES ('Sin algoritmo','Usar datos duros, sin suavizar',0,'t');
+INSERT INTO alarmas.algoritmos (nombre_algoritmo,descripcion,nro_parametros,enabled) VALUES ('Media movil','Media móvil simple',1,'t'); 
+INSERT INTO alarmas.algoritmos (nombre_algoritmo,descripcion,nro_parametros,enabled) VALUES ('Media móvil exponencial','Media móvil ponderada con pesos exponenciales',2,'t');
+INSERT INTO alarmas.algoritmos (nombre_algoritmo,descripcion,nro_parametros,enabled) VALUES ('Suavizamiento exponencial','Suavizamiento exponencial',1,'f'); 
+
+
+
+-- Crear tabla alarma
+CREATE TABLE "alarmas"."alarma" (
+	"id" serial PRIMARY KEY,
+	"poligono_id" int8 NOT NULL,
+	"nombre" VARCHAR (100) NOT NULL,
+	"descripcion" VARCHAR (300),
+	"sensores_id" int4,
+	"camposalarma_id" int4,
+	"algoritmos_id" int4,
+	"parametro_1" FLOAT8,
+	"parametro_2" FLOAT8,
+	"regla" VARCHAR (100),
+	"input_regla_1" FLOAT8,
+	"input_regla_2" FLOAT8,
+	"sms" BOOLEAN,
+	"email" BOOLEAN,
+	"query" VARCHAR,
+	"estado" BOOLEAN
+) WITH (OIDS = FALSE);
+
+-- Asignar a usuario postgres
+ALTER TABLE "alarmas"."alarma" OWNER TO "postgres";
+
+-- Crear llaves foraneas
+ALTER TABLE "alarmas"."alarma"
+ADD CONSTRAINT "alarmas_poligono_id_fkey" FOREIGN KEY ("poligono_id") REFERENCES "poligonos"."poligono" ("id") ON DELETE CASCADE ON UPDATE CASCADE,
+ADD CONSTRAINT "alarmas_sensores_id_fkey" FOREIGN KEY ("sensores_id") REFERENCES "sensor"."sensores" ("id") ON DELETE CASCADE ON UPDATE CASCADE,
+ADD CONSTRAINT "alarmas_camposalarma_id_fkey" FOREIGN KEY ("camposalarma_id") REFERENCES "sensor"."camposalarma" ("id") ON DELETE CASCADE ON UPDATE CASCADE,
+ADD CONSTRAINT "alarmas_algoritmos_id_fkey" FOREIGN KEY ("algoritmos_id") REFERENCES "alarmas"."algoritmos" ("id") ON DELETE CASCADE ON UPDATE CASCADE
+;
+
+
+
+-- Crear vista con la clausula compuesta a partir de la tabla alarmas.alarma
+CREATE OR REPLACE VIEW alarmas.v_clausula_alarmas AS(
+	SELECT
+		t1.id,
+		crea_query_where_alarma(t1.sensores_id, 
+								t1.camposalarma_id, 
+								t1.algoritmos_id, 
+								t1.parametro_1, 
+								t1.parametro_2, 
+								t1.regla, 
+								t1.input_regla_1, 
+								t1.input_regla_2 ) as clausula
+	FROM
+		alarmas.alarma t1
+	WHERE
+		t1.estado = 't'
+)
+;

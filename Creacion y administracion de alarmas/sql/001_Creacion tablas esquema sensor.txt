@@ -1,0 +1,68 @@
+/*
+Descripcion: 	Creacion de tablas del esquema sensores utilizados para las alarmas
+Fecha: 			12/02/2016
+Autor: 			Arnol García
+Tipo de sql:	Creacion
+Objetos:		- sensor.sensores
+				- sensor.camposalarma
+
+*/
+
+-- Eliminar tabla camposalarma si existe
+DROP TABLE
+IF EXISTS "sensor"."camposalarma";
+
+-- Eliminar tabla sensores si ya existe
+DROP TABLE
+IF EXISTS "sensor"."sensores";
+
+-- Crear tabla sensores
+CREATE TABLE "sensor"."sensores" (
+	"id" serial PRIMARY KEY,
+	"nombre_sensor" VARCHAR(100),
+	"descripcion" VARCHAR
+) WITH (OIDS = FALSE);
+
+-- Asignar tabla a usuario postgres
+ALTER TABLE "sensor"."sensores" OWNER TO "postgres";
+
+-- Insertar algunos valores iniciales
+INSERT INTO "sensor"."sensores" (nombre_sensor) VALUES ('prismas');
+INSERT INTO "sensor"."sensores" (nombre_sensor) VALUES ('radar');
+INSERT INTO "sensor"."sensores" (nombre_sensor) VALUES ('squeesar');
+INSERT INTO "sensor"."sensores" (nombre_sensor) VALUES ('piezometro');
+
+
+-- Crear tabla camposalarma
+CREATE TABLE "sensor"."camposalarma" (
+	"id" serial PRIMARY KEY,
+	"sensores_id" int4 NOT NULL,
+	"nombre_campo" VARCHAR(100),
+	"descriptor_campo" VARCHAR(200),
+	"nombre_tabla" VARCHAR(100)
+) WITH (OIDS = FALSE);
+
+-- Asignar a usuario postgres
+ALTER TABLE "sensor"."camposalarma" OWNER TO "postgres";
+
+-- Crear llaves foraneas
+ALTER TABLE "sensor"."camposalarma"
+ADD CONSTRAINT "camposalarma_sensores_id_fkey" FOREIGN KEY ("sensores_id") REFERENCES "sensor"."sensores" ("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+
+-- Insertar resgistros
+INSERT INTO "sensor"."camposalarma" (sensores_id,nombre_campo,descriptor_campo,nombre_tabla)
+VALUES (1,'deformacion_radial','Deformación radial','prismas.cons_alarma_prisma');
+
+INSERT INTO "sensor"."camposalarma" (sensores_id,nombre_campo,descriptor_campo,nombre_tabla)
+VALUES (1,'velocidad_radial','Velocidad radial','prismas.cons_alarma_prisma');
+
+INSERT INTO "sensor"."camposalarma" (sensores_id,nombre_campo,descriptor_campo,nombre_tabla)
+VALUES (1,'aceleracion_radial','Aceleración radial','prismas.cons_alarma_prisma');
+
+INSERT INTO "sensor"."camposalarma" (sensores_id,nombre_campo,descriptor_campo)
+VALUES (2,'deformacion','Deformación');
+
+
+
+

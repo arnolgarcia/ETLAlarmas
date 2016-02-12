@@ -1,0 +1,66 @@
+DROP FUNCTION
+IF EXISTS "alarmas"."_aagetalarmabyuserandpolig"(int8,int8);
+
+
+CREATE FUNCTION "alarmas"."_aagetalarmabyuserandpolig"(IN nombrem int8,IN nombrep int8)
+  RETURNS TABLE(
+			"id" int4,
+			"poligono_id" int8,
+			"nombre" VARCHAR (100),
+			"descripcion" VARCHAR (300),
+			"sensores_id" int4,
+			"camposalarma_id" int4,
+			"algoritmos_id" int4,
+			"parametro_1" FLOAT8,
+			"parametro_2" FLOAT8,
+			"regla" VARCHAR (100),
+			"input_regla_1" FLOAT8,
+			"input_regla_2" FLOAT8,
+			"sms" BOOLEAN,
+			"email" BOOLEAN,
+			"estado" BOOLEAN
+	)
+AS $BODY$
+
+BEGIN
+RETURN QUERY
+	SELECT DISTINCT 
+	aa.id,
+	aa.poligono_id,
+	aa.nombre,
+	aa.descripcion,
+	aa.sensores_id,
+	aa.camposalarma_id,
+	aa.algoritmos_id,
+	aa.parametro_1,
+	aa.parametro_2,
+	aa.regla,
+	aa.input_regla_1,
+	aa.input_regla_2,
+	aa.sms,
+	aa.email,
+	aa.estado
+	FROM alarmas.alarma aa
+	LEFT JOIN poligonos.poligono pp
+	ON pp."id" = aa.poligono_id
+	LEFT JOIN zona zz
+	ON zz.id = pp.zona_id
+	LEFT join rajo rr
+	ON rr.id = zz.rajo_id
+	LEFT JOIN faena ff
+	ON ff.id = rr.faena_id
+	LEFT JOIN minera
+	ON ff.minera_id = minera."id"
+	LEFT join users
+	ON users.minera_id = minera."id"
+	WHERE users.id = $1
+	and aa.poligono_id = $2;
+END
+
+
+$BODY$
+  LANGUAGE 'plpgsql' VOLATILE COST 100
+ ROWS 1000
+;
+
+ALTER FUNCTION "alarmas"."_aagetalarmabyuserandpolig"(IN nombrem int8, IN nombrep int8) OWNER TO "postgres";
