@@ -1,0 +1,24 @@
+DROP TABLE
+IF EXISTS alarmas.algoritmos;
+
+CREATE TABLE "alarmas"."algoritmos" (
+	"id" serial PRIMARY KEY,
+	"nombre_algoritmo" VARCHAR(100),
+	"descripcion" VARCHAR (300),
+	"nro_parametros" int4,
+	"enabled" BOOLEAN
+) WITH (OIDS = FALSE);
+
+ALTER TABLE "alarmas"."algoritmos" OWNER TO "postgres";
+
+INSERT INTO alarmas.algoritmos (nombre_algoritmo,descripcion,nro_parametros,enabled)
+VALUES ('Sin algoritmo','Usar datos duros, sin suavizar',0,'t');
+
+INSERT INTO alarmas.algoritmos (nombre_algoritmo,descripcion,nro_parametros,enabled)
+VALUES ('Media movil','Media móvil simple',1,'t'); 
+
+INSERT INTO alarmas.algoritmos (nombre_algoritmo,descripcion,nro_parametros,enabled)
+VALUES ('Media móvil exponencial','Media móvil ponderada con pesos exponenciales',2,'t');
+
+INSERT INTO alarmas.algoritmos (nombre_algoritmo,descripcion,nro_parametros,enabled)
+VALUES ('Suavizamiento exponencial','Suavizamiento exponencial',1,'f'); 

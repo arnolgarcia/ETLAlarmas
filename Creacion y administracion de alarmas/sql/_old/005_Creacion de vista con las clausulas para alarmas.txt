@@ -1,0 +1,103 @@
+/*
+-- Function	: clausulas_alarma(id_sen int4, id_camp int4, id_alg int4, p1 float8, p2 float8, reg varchar, v1 float8, v2 float8 )
+-- VIEW 		: crea vista alarmas.v_clausula_alarmas
+
+*/
+
+-- Eliminar view/function
+--DROP VIEW IF EXISTS alarmas.v_clausula_alarmas;
+--DROP FUNCTION clausulas_alarma(id_sen int4, id_camp int4, id_alg int4, p1 float8, p2 float8, reg varchar, v1 float8, v2 float8 );
+
+
+-- Crear function clausulas_alarma()
+CREATE OR REPLACE FUNCTION clausulas_alarma(id_sen int4, id_camp int4, id_alg int4, p1 float8, p2 float8, reg varchar, v1 float8, v2 float8 )
+  RETURNS TABLE (tabla VARCHAR, campo VARCHAR, clausula_where VARCHAR) AS
+$BODY$
+
+	-- Declarar variables locales
+	DECLARE
+	sNombreTabla$ varchar(100);
+	sNombreCampo$ varchar(100);
+	sQueryField$ varchar(100);
+	sQuery$ varchar;
+
+	BEGIN
+	-- Inicializar string con la clausula a retornar
+	sQuery$ = '';
+
+	-- Definir nombre de la tabla
+	SELECT	nombre_tabla
+	INTO	sNombreTabla$
+	FROM	sensor.camposalarma
+	WHERE	sensores_id = id_sen AND
+	id = id_camp;
+		
+	-- Definir nombre del campo
+	SELECT	nombre_campo
+	INTO	sNombreCampo$
+	FROM	sensor.camposalarma
+	WHERE	id = id_camp;
+
+	-- Guarda variable con el formato "esquema.tabla.campo"
+	sQueryField$ = 'AVG(' || sNombreTabla$ || '.' || sNombreCampo$ || ')';
+
+	-- Crear condicion en base a la regla
+	IF reg = 'mayorIgual'
+		THEN sQuery$ = sQuery$ || sQueryField$ || ' >= ' || v1;
+
+	ELSIF reg = 'menorIgual'
+		THEN sQuery$ = sQuery$ || sQueryField$ || ' <= ' || v1;
+
+	ELSIF reg = 'entre'
+		THEN sQuery$ = sQuery$ || sQueryField$ || ' >= ' || v1 || ' AND ' || sQueryField$ || ' <= ' || v2;
+
+	ELSIF reg = 'noEntre'
+		THEN sQuery$ = sQuery$ || sQueryField$ || ' <= ' || v1 || ' OR ' || sQueryField$ || ' >= ' || v2;
+	END IF;
+
+	-- Retornar tabla, campo, clausula_where
+	RETURN QUERY SELECT sNombreTabla$, sNombreCampo$, sQuery$;
+	END;
+
+$BODY$
+  LANGUAGE 'plpgsql' VOLATILE;
+ALTER FUNCTION clausulas_alarma(id_sen int4, id_camp int4, id_alg int4, p1 float8, p2 float8, reg varchar, v1 float8, v2 float8 ) OWNER TO postgres;
+
+
+
+CREATE OR REPLACE VIEW alarmas.v_clausula_alarmas AS(
+	SELECT
+		t1.id alarma_id,
+		t1.poligono_id,
+		(clausulas_alarma(t1.sensores_id, 
+														t1.camposalarma_id, 
+														t1.algoritmos_id, 
+														t1.parametro_1, 
+														t1.parametro_2, 
+														t1.regla, 
+														t1.input_regla_1, 
+														t1.input_regla_2 )).tabla as tabla,
+		(clausulas_alarma(t1.sensores_id, 
+														t1.camposalarma_id, 
+														t1.algoritmos_id, 
+														t1.parametro_1, 
+														t1.parametro_2, 
+														t1.regla, 
+														t1.input_regla_1, 
+														t1.input_regla_2 )).campo as campo,
+		(clausulas_alarma(t1.sensores_id, 
+														t1.camposalarma_id, 
+														t1.algoritmos_id, 
+														t1.parametro_1, 
+														t1.parametro_2, 
+														t1.regla, 
+														t1.input_regla_1, 
+														t1.input_regla_2 )).clausula_where as clausula_where
+	FROM
+		alarmas.alarma t1
+	WHERE
+		t1.estado = 't'
+	ORDER BY
+		t1.id
+)
+;

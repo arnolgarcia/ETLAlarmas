@@ -5,12 +5,10 @@ Autor: 			Arnol García
 Tipo de sql: 	Creacion
 Objetos:		- alarmas.alarma
 				- alarmas.algoritmos
-				- alarmas.v_clausula_alarmas
 
 */
 
 --Eliminar tabla si existen
-DROP VIEW IF EXISTS alarmas.v_clausula_alarmas;
 DROP TABLE IF EXISTS alarmas.alarma;
 DROP TABLE IF EXISTS alarmas.algoritmos;
 
@@ -65,28 +63,4 @@ ADD CONSTRAINT "alarmas_poligono_id_fkey" FOREIGN KEY ("poligono_id") REFERENCES
 ADD CONSTRAINT "alarmas_sensores_id_fkey" FOREIGN KEY ("sensores_id") REFERENCES "sensor"."sensores" ("id") ON DELETE CASCADE ON UPDATE CASCADE,
 ADD CONSTRAINT "alarmas_camposalarma_id_fkey" FOREIGN KEY ("camposalarma_id") REFERENCES "sensor"."camposalarma" ("id") ON DELETE CASCADE ON UPDATE CASCADE,
 ADD CONSTRAINT "alarmas_algoritmos_id_fkey" FOREIGN KEY ("algoritmos_id") REFERENCES "alarmas"."algoritmos" ("id") ON DELETE CASCADE ON UPDATE CASCADE
-;
-
-
-
--- Crear vista con las clausulas compuestas a partir de los parametros de la tabla alarmas.alarma
-CREATE OR REPLACE VIEW alarmas.v_clausula_alarmas AS(
-	SELECT
-		t1.id alarma_id,
-		t1.poligono_id,
-		crea_query_where_alarma(t1.sensores_id, 
-														t1.camposalarma_id, 
-														t1.algoritmos_id, 
-														t1.parametro_1, 
-														t1.parametro_2, 
-														t1.regla, 
-														t1.input_regla_1, 
-														t1.input_regla_2 ) as clausula_where
-	FROM
-		alarmas.alarma t1
-	WHERE
-		t1.estado = 't'
-	ORDER BY
-		t1.id
-)
 ;

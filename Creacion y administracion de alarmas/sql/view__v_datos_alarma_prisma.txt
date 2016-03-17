@@ -1,0 +1,21 @@
+/*
+Descripcion	: crea vista alarmas.v_datos_alarma_prisma que contiene las columnas estandarizadas para el calculo de las alarmas
+
+*/
+
+DROP VIEW
+IF EXISTS alarmas.v_datos_alarma_prisma;
+
+CREATE
+OR REPLACE VIEW alarmas.v_datos_alarma_prisma AS (
+	SELECT
+		t1.ogc_fid id,
+		t1.pointid prisma_id,
+		t1.fecha fecha,
+		t1.deformacion_radial deformacion_radial,
+		t1.velocidad_radial velocidad_radial,
+		t1.aceleracion_radial aceleracion_radial
+	FROM
+		"prismas"."cons_alarma_prisma" t1
+)
+;

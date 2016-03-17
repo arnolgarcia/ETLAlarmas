@@ -1,0 +1,107 @@
+/*
+-- Descripcion	: Crea la vista 'v_condicion_alarmas'
+-- Objetos		: -clausulas_alarma(id_sen int4, id_camp int4, id_alg int4, p1 float8, p2 float8, reg varchar, v1 float8, v2 float8 )
+				  -alarmas.v_condicion_alarmas
+				  
+-- Autor		: Arnol García
+-- Fecha		: 16-02-2016
+
+*/
+
+-- Eliminar view/function
+DROP VIEW IF EXISTS alarmas.v_condicion_alarmas;
+DROP FUNCTION alarmas.clausulas_alarma(id_sen int4, id_camp int4, id_alg int4, p1 float8, p2 float8, reg varchar, v1 float8, v2 float8 );
+
+
+-- Crear function clausulas_alarma()
+CREATE OR REPLACE FUNCTION alarmas.clausulas_alarma(id_sen int4, id_camp int4, id_alg int4, p1 float8, p2 float8, reg varchar, v1 float8, v2 float8 )
+	RETURNS TABLE (
+		tabla_datos VARCHAR, 
+		campo VARCHAR, 
+		condicion_alarma VARCHAR,
+		tabla_interseccion VARCHAR,
+		tipo_sensor VARCHAR(100)
+	) AS
+	
+	$BODY$
+
+		-- Declarar variables locales
+		DECLARE
+		sNombreTabla$ varchar(100);
+		sNombreCampo$ varchar(100);
+		sNombreSensor$ varchar(100);
+		sQueryField$ varchar;
+		sQuery$ varchar;
+
+		
+		BEGIN
+		
+		-- Inicializar string vacio
+		sQuery$ = '';
+
+		-- Definir nombre de la tabla y del campo
+		SELECT 	nombre_tabla,nombre_campo
+		INTO 	sNombreTabla$,	sNombreCampo$
+		FROM	sensor.camposalarma
+		WHERE	sensores_id = id_sen AND id = id_camp;
+			
+
+		-- Guarda variable con el formato "esquema.tabla.campo"
+		sQueryField$ = 'AVG(tabla_datos.' || sNombreCampo$ || ')';
+
+		-- Crear condicion en base a la regla
+		IF reg = 'mayorIgual'
+			THEN sQuery$ = sQuery$ || sQueryField$ || ' >= ' || v1;
+
+		ELSIF reg = 'menorIgual'
+			THEN sQuery$ = sQuery$ || sQueryField$ || ' <= ' || v1;
+
+		ELSIF reg = 'entre'
+			THEN sQuery$ = sQuery$ || sQueryField$ || ' >= ' || v1 || ' AND ' || sQueryField$ || ' <= ' || v2;
+
+		ELSIF reg = 'noEntre'
+			THEN sQuery$ = sQuery$ || sQueryField$ || ' <= ' || v1 || ' OR ' || sQueryField$ || ' >= ' || v2;
+		END IF;
+		
+		
+		-- Definir nombre del sensor para determinar la tabla de interseccion
+		SELECT	nombre_sensor
+		INTO 	sNombreSensor$
+		FROM 	sensor.sensores
+		WHERE 	id = id_sen;		
+
+		tabla_interseccion = 'poligonos.v_poligono_' || sNombreSensor$;
+		
+		
+		-- Retornar tabla_datos, campo, condicion_alarma, tipo_sensor
+		RETURN QUERY SELECT sNombreTabla$, sNombreCampo$, sQuery$, tabla_interseccion, sNombreSensor$;
+		END;
+
+	$BODY$
+LANGUAGE 'plpgsql' VOLATILE;
+
+-- Asignar a postgres
+ALTER FUNCTION alarmas.clausulas_alarma(id_sen int4, id_camp int4, id_alg int4, p1 float8, p2 float8, reg varchar, v1 float8, v2 float8 ) OWNER TO postgres;
+
+
+
+CREATE OR REPLACE VIEW alarmas.v_condicion_alarmas AS(
+	SELECT
+		t1.id alarma_id,
+		t1.poligono_id,
+		(alarmas.clausulas_alarma(t1.sensores_id, 
+														t1.camposalarma_id, 
+														t1.algoritmos_id, 
+														t1.parametro_1, 
+														t1.parametro_2, 
+														t1.regla, 
+														t1.input_regla_1, 
+														t1.input_regla_2 )).*
+	FROM
+		alarmas.alarma t1
+	WHERE
+		t1.estado = 't'
+	ORDER BY
+		t1.id
+)
+;

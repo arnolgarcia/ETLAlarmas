@@ -1,0 +1,71 @@
+DROP FUNCTION 
+IF EXISTS alarmas.calcula_alarma (alarma_id$ int8);
+
+CREATE OR REPLACE FUNCTION alarmas.calcula_alarma (alarma_id$ int8)
+RETURNS TABLE (
+	alarma_id int4,
+	poligono_id int4,
+	nro_elementos int8,
+	fecha timestamp, 
+	valor_campo float8, 
+	genera_alerta BOOLEAN) AS
+
+$BODY$
+
+	-- Declarar variables locales
+	DECLARE
+	sQuery$ VARCHAR;
+	poligono_id$ int8;
+	tabla$ VARCHAR;
+	campo$ VARCHAR;
+	condicion_alarma$ VARCHAR;
+
+	BEGIN
+		-- Definir variables locales
+		SELECT
+			t1.poligono_id,
+			t1.tabla,
+			t1.campo,
+			t1.clausula_where
+		INTO
+			poligono_id$,
+			tabla$,
+			campo$,
+			condicion_alarma$
+		FROM 
+			alarmas.v_clausula_alarmas t1
+		WHERE
+			t1.alarma_id = alarma_id$;
+			
+
+		-- Inicializar string con la clausula a retornar
+		sQuery$ =  'SELECT
+									' || alarma_id$ || ' AS alarma_id,
+									' || poligono_id$ || ' AS poligono_id,
+									COUNT(table2.id_prisma) AS nro_elementos,
+									' || tabla$ || '.fecha AS fecha,
+									AVG(' || tabla$ || '.' || campo$ || ') AS valor_campo,
+									(CASE 	
+										WHEN ' || condicion_alarma$ || ' 
+											THEN ''t''
+										ELSE ''f''
+									END)::BOOLEAN AS genera_alerta
+								FROM
+									' || tabla$ || '
+								INNER JOIN 
+									poligonos.poligono_prisma table2
+								ON (
+									table2.id_poligono = ' || poligono_id$ || ' AND
+									' || tabla$ || '.prisma_id = table2.id_prisma
+								)
+								GROUP BY
+									' || tabla$ || '.fecha
+								;';
+
+		-- Retornar alarma_id, poligono_id, fecha, valor_campo, genera_alerta
+		RETURN QUERY EXECUTE sQuery$;
+	END;
+
+$BODY$
+  LANGUAGE 'plpgsql' VOLATILE;
+ALTER FUNCTION alarmas.calcula_alarma (alarma_id$ int8) OWNER TO postgres;

@@ -1,0 +1,48 @@
+/*
+Deescripcion:	Crea tabal para almacenar las alarmas
+Objetos:			-alarmas.alarma_seq
+							-alarmas.alarma
+Autor:				Arnol García
+Fecha:				16-02-2016
+
+Obs:					Falta validar los cambios a como se crea la secuencia
+*/
+
+-- Eliminar tabla y secuencia si existen
+DROP TABLE IF EXISTS alarmas.alarma;
+DROP SEQUENCE IF EXISTS alarmas.alarma_seq;
+
+-- Crear secuencia
+CREATE SEQUENCE alarmas.alarma_seq;
+
+-- Crear Tabla
+CREATE TABLE "alarmas"."alarma" (
+	"id" INT4 DEFAULT nextval('alarmas.alarma_seq') PRIMARY KEY,
+	"poligono_id" int8 NOT NULL,
+	"nombre" VARCHAR (100) NOT NULL,
+	"descripcion" VARCHAR (300),
+	"sensores_id" int4,
+	"camposalarma_id" int4,
+	"algoritmos_id" int4,
+	"parametro_1" FLOAT8,
+	"parametro_2" FLOAT8,
+	"regla" VARCHAR (100),
+	"input_regla_1" FLOAT8,
+	"input_regla_2" FLOAT8,
+	"sms" BOOLEAN,
+	"email" BOOLEAN,
+	"query" VARCHAR,
+	"estado" BOOLEAN
+) WITH (OIDS = FALSE)
+;
+
+-- Asignar al usuario postgres
+ALTER TABLE "alarmas"."alarma" OWNER TO "postgres";
+
+-- Crear llaves foraneas
+ALTER TABLE "alarmas"."alarma"
+ADD CONSTRAINT "alarmas_poligono_id_fkey" FOREIGN KEY ("poligono_id") REFERENCES "poligonos"."poligono" ("id") ON DELETE CASCADE ON UPDATE CASCADE,
+ADD CONSTRAINT "alarmas_sensores_id_fkey" FOREIGN KEY ("sensores_id") REFERENCES "sensor"."sensores" ("id") ON DELETE CASCADE ON UPDATE CASCADE,
+ADD CONSTRAINT "alarmas_camposalarma_id_fkey" FOREIGN KEY ("camposalarma_id") REFERENCES "sensor"."camposalarma" ("id") ON DELETE CASCADE ON UPDATE CASCADE,
+ADD CONSTRAINT "alarmas_algoritmos_id_fkey" FOREIGN KEY ("algoritmos_id") REFERENCES "alarmas"."algoritmos" ("id") ON DELETE CASCADE ON UPDATE CASCADE
+;
